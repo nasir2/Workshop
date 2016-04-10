@@ -18,22 +18,20 @@ public class firebase extends MainActivity {
 
     @JsonIgnoreProperties(ignoreUnknown=true)
     public static class User {
-        int ticket_id;
-        int est;
+        long ticket_id;
+        long est;
         String location;
-
-
 
 
         public User() {
             // empty default constructor, necessary for Firebase to be able to deserialize Users
         }
 
-        public int getTicket() {
+        public long getTicket() {
             return ticket_id;
         }
 
-        public int getEst(){
+        public long getEst(){
             return est;
         }
 
@@ -41,9 +39,10 @@ public class firebase extends MainActivity {
             return location;
         }
 
+
         @Override
         public String toString() {
-            return "User{ticket_id='" + ticket_id + "', est='" + est + "',  location='" + location + "'}";
+            return "User{ticket_id='" + ticket_id + "\', est='" + est + "\', location'" + location + "\'}";
         }
     }
 }

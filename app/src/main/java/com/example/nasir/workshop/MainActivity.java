@@ -41,9 +41,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     @SuppressWarnings("deprecation")
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "My Tag");
-
 
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
@@ -64,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MainActivity.class);
         // use System.currentTimeMillis() to have a unique ID for the pending intent
         PendingIntent pIntent = PendingIntent.getActivity(this, (int) System.currentTimeMillis(), intent, 0);
-
         Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
 
@@ -79,48 +78,25 @@ public class MainActivity extends AppCompatActivity {
                 .setSound(alarmSound)
                 .build();
 
-
-
          final NotificationManager notificationManager =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
 
-
-
-        getWindow().requestFeature(Window.FEATURE_PROGRESS);
-
         WebView webview = new WebView(this);
         webview.getSettings().setJavaScriptEnabled(true);
         setContentView(webview);
-
-
-        super.onCreate(savedInstanceState);
-
         webview.getSettings().setJavaScriptEnabled(true);
         webview.getSettings().setAppCacheEnabled(false);
-
-        final Activity activity = this;
-        webview.setWebChromeClient(new WebChromeClient() {
-            public void onProgressChanged(WebView view, int progress) {
-
-                activity.setProgress(progress * 1000);
-            }
-        });
-        webview.setWebViewClient(new WebViewClient() {
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                Toast.makeText(activity, "Oh no! " + description, Toast.LENGTH_SHORT).show();
-            }
-        });
         webview.loadUrl("https://ioio.mah.se/q/queue.html");
         Firebase.setAndroidContext(this);
 
         final Firebase ref = new Firebase("https://mah-q.firebaseio.com/tickets");
 
 
-
         ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
+                System.out.println("There are " + snapshot.getChildrenCount() + " person(s) in the queue right now");
                 //System.out.println(snapshot.getValue());
                 //this is where the magic happens
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -130,7 +106,6 @@ public class MainActivity extends AppCompatActivity {
                 //wl.acquire();
             }
 
-
             @Override
             public void onCancelled(FirebaseError firebaseError) {
                 System.out.println("The read failed: " + firebaseError.getMessage());
@@ -138,21 +113,40 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        //Query queryRef = ref.orderByChild("/ticket_id");
-        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+        ref.addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                //notificationManager.notify(0, n);
-                System.out.println("There are " + dataSnapshot.getChildrenCount() + " tickets");
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
-                for (DataSnapshot userSnapshot : dataSnapshot.getChildren()) {
-
-                    firebase.User user = userSnapshot.getValue(firebase.User.class);
-                    System.out.println(user.toString());
-                }
             }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                //this is where the magic happens
+                firebase.User user = dataSnapshot.getValue(firebase.User.class);
+
+
+                if(user.getTicket() != 0){
+                    //Alerts when a new person enters the queue
+                    System.out.println("New person in the queue!");
+                    notificationManager.notify(0, n);
+                }
+                //arbitrary print of the new user event
+                System.out.println(user.toString());
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
             @Override
             public void onCancelled(FirebaseError firebaseError) {
+
             }
         });
     }
